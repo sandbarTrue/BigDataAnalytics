@@ -28,17 +28,6 @@ server <- function(input, output){
   })
   
   output$associationAnalysisFomula <- renderUI({
-    # ex <- expression("confidence(A=>B)=P(A|B)")
-    # ex1<-expression("=support_count(A U B)/support_count(A)")
-    # par(mar = rep(0.1,4),cex=1)
-    # plot.new()
-    # title<-"计算置信度公式"
-    # plot.window(c(0, 2), c(0, 1))
-    # text(0.2,1,title)
-    # text(0.4, 0.8, ex) 
-    # text(1.33, 0.6, ex1)
-    # context<-"<img src=gongshi.jpg />"
-    # HTML(context)
     img(src="apriori.png")
     
   })
@@ -56,12 +45,15 @@ server <- function(input, output){
     },
     content = function(file) {
      
-      data<-as( aprioriResult(),"data.frame")
+      data<-as(aprioriResult(),"data.frame")
       write.csv(data,file)
     }
   )
   output$associationAnalysisResource <- renderUI({
     context<-"
+    #加载R包<br>
+    library(arules)<br>
+    library(arulesViz)<br>
     #加载数据<br>
     data(Groceries)<br>
     #获取关联规则  连接步和剪枝步<br>
@@ -413,7 +405,7 @@ server <- function(input, output){
   })
   output$naiveBayesResult1 <- renderPlot({
    
-    # predicted_outcome <- predict(naiveBayesResult(), naiveBayesData()[,-length(naiveBayesData())])
+   
      resampleHist(naiveBayesResult())
   })
   output$naiveBayesResult2 <- renderPrint({
@@ -427,14 +419,17 @@ server <- function(input, output){
       paste('data-', Sys.Date(), '.csv', sep='')
     },
     content = function(file) {
-      predicted_outcome<-NULL
+      predicted_outcome<- predict(naiveBayesResult())
       if(!is.null(input$naiveBayesFile1)){
         
         naiveBayesData <- read.csv(input$naiveBayesFile1$datapath)
         predicted_outcome <- predict(naiveBayesResult(), naiveBayesData)
         write.csv(predicted_outcome,file)
       }
-      write.csv(predicted_outcome,file)
+      else{
+        write.csv(predicted_outcome,file)
+      }
+      
     }
   )
   
@@ -508,14 +503,16 @@ server <- function(input, output){
       paste('data-', Sys.Date(), '.csv', sep='')
     },
     content = function(file) {
-      
-      predicted_outcome<-NULL
+      predicted_outcome <- predict(nnetResult(),nnetTestData(),type="class")
       if(!is.null(input$nnetFile1)){
         nnetData <- read.csv(input$nnetFile1$datapath)
         predicted_outcome <- predict(nnetResult(), nnetData,type="class")
         write.csv(predicted_outcome,file)
       }
-      write.csv(predicted_outcome,file)
+      else{
+        write.csv(predicted_outcome,file)
+      }
+      
     }
   )
   
@@ -690,14 +687,17 @@ server <- function(input, output){
       paste('data-', Sys.Date(), '.csv', sep='')
     },
     content = function(file) {
-      predicted_outcome<-NULL
+      predicted_outcome<-predict(rpartResult(),rpartTestData(),type="class")
       if(!is.null(input$rpartFile1)){
         
         rpartData <- read.csv(input$rpartFile1$datapath)
         predicted_outcome <- predict(rpartResult(), rpartData,type="class")
         write.csv(predicted_outcome,file)
       }
-      write.csv(predicted_outcome,file)
+      else{
+        write.csv(predicted_outcome,file)
+      }
+      
     }
   )
   
@@ -728,33 +728,93 @@ server <- function(input, output){
   })
   
   
+  # 主成分分析
+  princompResult <- reactive({
+    princompResult <- princomp(princompData(),cor = TRUE)
+  })
   
-  # 文本出路 分词 统计词频 词云绘制
+  princompData <- reactive({
+   
+    if(!is.null(input$princompFile)){
+      princompData <- read.csv(input$princompFile$datapath)
+    }
+    else{
+      princompData <- iris[1:4]
+    }
+  })
+ 
+  output$princompResult1 <- renderPrint({
+    summary(princompResult(), loadings = T)
+  })
+  output$princompResult2 <- renderPlot({
+    
+    screeplot(princompResult(),type = "lines")
+  })
+  
+  output$princompResult3 <- renderPlot({
+    biplot(princompResult())
+  })
+  
+  output$princompDownloadData <- downloadHandler(
+    filename = function() {
+      paste('data-', Sys.Date(), '.csv', sep='')
+    },
+    content = function(file) {
+     write.csv(tidy(summary(princompResult(),loadings = T)),file)
+    }
+  )
+  
+  output$princompDownloadData1 <- downloadHandler(
+    filename = function() {
+      paste('data-', Sys.Date(), '.csv', sep='')
+    },
+    content = function(file) {
+      pca_data <- predict(princompResult())
+      write.csv(pca_data,file)
+    }
+  )
+  
+  output$princompResource <- renderUI({
+    context<-"
+    #加载数据<br>
+    data(iris)<br>
+    princompData<-iris[1:4]<br>
+    #主成分分析 cor = T的意思是用相关系数进行主成分分析<br>
+    princompResult <- princomp(princompData(),cor = TRUE)<br>
+    #主成分分析的详细情况<br>
+    summary(princompResult, loadings = T)<br>
+    #画出主成分的碎石图,主成分特征值的大小构成的陡坡图<br>
+    screeplot(princompResult,type = \"lines\")<br>
+    ##画出数据关于前两个主成分的散点图和原坐标在主成分下的方向<br>
+    biplot(princompResult)<br>
+    "
+    HTML(context)
+  })
+  
+  
+  
+  
+  # 文本处理 分词 统计词频 词云绘制
   library(jiebaR)
   library(wordcloud2)
   jiebaRResult <- reactive({
-     browser()
+     
     if(!is.null(input$jiebaRDictFile)){
       jiebaRDict <- input$jiebaRDictFile$datapath
     }
     else{
-      jiebaRDict<-"data/金庸武侠招式.txt"
+      jiebaRDict<-"data/user.utf8"
     }
     if(!is.null(input$jiebaRStopwordFile)){
       jiebaRStopword <- input$jiebaRStopwordFile$datapath
     }
     else{
-      jiebaRStopword<- "data/stop_word1.txt"
+      jiebaRStopword<- "data/stop_words.utf8"
     }
       #指定词语词频统计
-      #user 自定义词典 
+      #user 自定义词典
       wk=worker(stop_word=jiebaRStopword,user=jiebaRDict,write=FALSE)
       test1<-segment(jiebaRData(),wk)
-      #关键词提取
-      #keys= worker("keywords", topn = 10)
-      #write.table(vector_keywords(test1,keys),file=paste("关键词",i,".txt"))
-      #将结果变成数据框
-      
       data <- as.data.frame(table(test1))
       #写列名
       colnames(data) = c("Word","freq")
@@ -770,7 +830,7 @@ server <- function(input, output){
       jiebaRData <- input$jiebaRFile$datapath
     }
     else{
-      jiebaRData<-"data/test.txt"
+      jiebaRData<-"data/说岳全传_GBK.txt"
     }
    
   })

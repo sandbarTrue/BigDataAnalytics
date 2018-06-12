@@ -32,14 +32,10 @@ ui <- dashboardPage(
                       menuSubItem("决策树(id3 和 cart)", tabName = "rpart")
                       
              ),
-             menuSubItem("随机模拟", tabName = "subitem2"),
-             menuSubItem("主成分分析", tabName = "subitem2")
+             menuSubItem("主成分分析", tabName = "princomp")
              ),
     menuItem("其他",icon = icon("dashboard"),
-             menuSubItem("文本处理",tabName="jiebaR"),
-             menuSubItem("情感分析", tabName = "subitem2"),
-             menuSubItem("地理信息分析", tabName = "subitem2"),
-             menuSubItem("图像分析", tabName = "subitem2")
+             menuSubItem("文本处理",tabName="jiebaR")
              )
   )),
   dashboardBody(
@@ -560,19 +556,56 @@ ui <- dashboardPage(
                                   ,width=12)
             )
     ),
-    #11th 文本处理 jiebaR
+    
+    
+    #11th 主成分分析
+    tabItem(tabName = "princomp",
+            fluidRow(
+              
+              shinydashboard::box(title="数据准备区",fileInput("princompFile", "Choose CSV File",
+                                                          multiple = TRUE,
+                                                          accept = c("text/csv",
+                                                                     "text/comma-separated-values,text/plain",
+                                                                     ".csv")),width=5),
+              shinydashboard::box(
+                title="公式展示区",a("点击查看",href="princompFormula.png",target="black"),width=7)
+              
+            ),
+            fluidRow(
+              shinydashboard::box(title="结果展示",
+                                  shinydashboard::box(title="下载分析结果",downloadLink('princompDownloadData','DownloadResult')
+                                                      ,width = 3),
+                                  shinydashboard::box(title="下载预测结果",downloadLink('princompDownloadData1','DownloadResult')
+                                                      ,width = 3),
+                                  shinydashboard::box(verbatimTextOutput("princompResult1"),width = 12
+                                  ),
+                                  shinydashboard::box(plotOutput("princompResult2"),width = 12
+                                  ),
+                                  shinydashboard::box(plotOutput("princompResult3"),width = 12
+                                  )
+                                  ,width=12)
+            ),
+            fluidRow(
+              shinydashboard::box(title="核心代码展示区",
+                                  shinydashboard::box(htmlOutput('princompResource'),width = 12
+                                  )
+                                  ,width=12)
+            )
+    ),
+    
+    #12th 文本处理 jiebaR
     tabItem(tabName = "jiebaR",
             fluidRow(
               shinydashboard::box(
-                shinydashboard::box(title="上传待分词文本",fileInput("jiebaRFile", "Choose txt File",
+                shinydashboard::box(title="上传待分词文本",fileInput("jiebaRFile", "Choose utf8 File",
                                                             accept = c("text/csv",
                                                                        "text/comma-separated-values,text/plain",
                                                                        ".txt")),width=4),
-                shinydashboard::box(title="上传自定义词典",fileInput("jiebaRDictFile", "Choose txt File",
+                shinydashboard::box(title="上传自定义词典",fileInput("jiebaRDictFile", "Choose utf8 File",
                                                             accept = c("text/csv",
                                                                        "text/comma-separated-values,text/plain",
                                                                        ".txt")),width=4),
-                shinydashboard::box(title="上传停用词词典",fileInput("jiebaRStopwordFile", "Choose txt File",
+                shinydashboard::box(title="上传停用词词典",fileInput("jiebaRStopwordFile", "Choose utf8 File",
                                                             accept = c("text/csv",
                                                                        "text/comma-separated-values,text/plain",
                                                                        ".txt")),width=4)
